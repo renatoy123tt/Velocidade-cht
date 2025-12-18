@@ -1,0 +1,165 @@
+<!DOCTYPE html><html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpeedTest Brasil</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: linear-gradient(135deg, #0a66ff, #00c6ff);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }.card {
+  background: #ffffff;
+  color: #333;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  text-align: center;
+}
+
+h1 {
+  margin-bottom: 16px;
+  font-size: 22px;
+}
+
+.results {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.box {
+  flex: 1;
+  margin: 0 6px;
+  background: #f4f6f8;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.box span {
+  display: block;
+  font-size: 12px;
+  color: #666;
+}
+
+.box strong {
+  font-size: 20px;
+  color: #0a66ff;
+}
+
+button {
+  background: #0a66ff;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  width: 100%;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #004fd6;
+}
+
+.status {
+  margin-top: 16px;
+  font-size: 14px;
+  color: #444;
+}
+
+footer {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #777;
+}
+
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Teste de Velocidade da Internet</h1><div class="results">
+  <div class="box">
+    <span>Ping</span>
+    <strong id="ping">--</strong> ms
+  </div>
+  <div class="box">
+    <span>Download</span>
+    <strong id="download">--</strong> Mbps
+  </div>
+  <div class="box">
+    <span>Upload</span>
+    <strong id="upload">--</strong> Mbps
+  </div>
+</div>
+
+<button onclick="startTest()">Iniciar Teste</button>
+
+<div class="status" id="status">Clique em iniciar para testar</div>
+
+<footer>
+  Projeto simples de SpeedTest (HTML + JS)
+</footer>
+
+  </div>  <script>
+    async function testPing() {
+      const start = performance.now();
+      await fetch("https://www.google.com/images/phd/px.gif", { mode: 'no-cors' });
+      const end = performance.now();
+      return Math.round(end - start);
+    }
+
+    async function testDownload() {
+      const start = performance.now();
+      const response = await fetch("https://speed.hetzner.de/10MB.bin");
+      const data = await response.blob();
+      const end = performance.now();
+      const sizeBits = data.size * 8;
+      const timeSeconds = (end - start) / 1000;
+      return ((sizeBits / timeSeconds) / 1024 / 1024).toFixed(1);
+    }
+
+    async function testUpload() {
+      const data = new Blob([new ArrayBuffer(5 * 1024 * 1024)]);
+      const start = performance.now();
+      await fetch("https://httpbin.org/post", {
+        method: "POST",
+        body: data
+      });
+      const end = performance.now();
+      const sizeBits = data.size * 8;
+      const timeSeconds = (end - start) / 1000;
+      return ((sizeBits / timeSeconds) / 1024 / 1024).toFixed(1);
+    }
+
+    async function startTest() {
+      document.getElementById("status").innerText = "Testando...";
+      document.getElementById("ping").innerText = "...";
+      document.getElementById("download").innerText = "...";
+      document.getElementById("upload").innerText = "...";
+
+      try {
+        const ping = await testPing();
+        document.getElementById("ping").innerText = ping;
+
+        const download = await testDownload();
+        document.getElementById("download").innerText = download;
+
+        const upload = await testUpload();
+        document.getElementById("upload").innerText = upload;
+
+        document.getElementById("status").innerText = "Teste finalizado";
+      } catch (e) {
+        document.getElementById("status").innerText = "Erro ao testar a conexão";
+      }
+    }
+  </script></body>
+</html>
