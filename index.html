@@ -1,194 +1,446 @@
-<!DOCTYPE html><html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Minha Conexão – Speed Test</title>  <style>
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #0b0b0b;
-      color: #ffffff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedTest - Simulação Visual</title>
+    <style>
+        /* --- RESET E ESTILOS GERAIS --- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
 
-    .container {
-      width: 100%;
-      max-width: 420px;
-      padding: 20px;
-      text-align: center;
-    }
+        body {
+            background-color: #0b0c15; /* Cor de fundo escura do vídeo */
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+        }
 
-    h1 {
-      font-size: 20px;
-      margin-bottom: 20px;
-    }
+        /* --- CABEÇALHO --- */
+        header {
+            width: 100%;
+            padding: 15px;
+            text-align: center;
+            background-color: #141526;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
 
-    .circle {
-      width: 200px;
-      height: 200px;
-      border-radius: 50%;
-      border: 8px solid #1f1f1f;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      position: relative;
-    }
+        .logo {
+            font-weight: bold;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
 
-    .circle::after {
-      content: "";
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 50%;
-      border: 8px solid #00e5ff;
-      clip-path: inset(0 0 50% 0);
-      transform: rotate(0deg);
-      animation: spin 2s linear infinite;
-    }
+        /* --- ÁREA PRINCIPAL (MÉTRICAS) --- */
+        .main-stage {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
 
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+        /* Círculo do Medidor (Gauge) */
+        .gauge-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-    .speed {
-      font-size: 36px;
-      font-weight: bold;
-      color: #00e5ff;
-    }
+        /* SVG para o arco de progresso */
+        svg.gauge {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-225deg); /* Início do arco */
+        }
 
-    .unit {
-      font-size: 14px;
-      color: #aaaaaa;
-    }
+        circle {
+            fill: none;
+            stroke-width: 8;
+            stroke-linecap: round;
+        }
 
-    .info {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
+        .circle-bg {
+            stroke: #1c1e33; /* Fundo do trilho cinza escuro */
+        }
 
-    .box {
-      background: #1a1a1a;
-      border-radius: 10px;
-      padding: 12px;
-      width: 32%;
-    }
+        .circle-progress {
+            stroke: url(#gradient); /* Gradiente ciano/azul */
+            stroke-dasharray: 628; /* Circunferência 2*PI*R (R=100) */
+            stroke-dashoffset: 628; /* Começa vazio */
+            transition: stroke-dashoffset 0.1s linear;
+            filter: drop-shadow(0 0 10px rgba(0, 255, 230, 0.6));
+        }
 
-    .box span {
-      font-size: 12px;
-      color: #888;
-    }
+        /* Textos centrais */
+        .gauge-center {
+            position: absolute;
+            text-align: center;
+            z-index: 10;
+        }
 
-    .box strong {
-      display: block;
-      margin-top: 6px;
-      font-size: 16px;
-      color: #00e5ff;
-    }
+        .speed-value {
+            font-size: 4rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255,255,255,0.2);
+        }
 
-    button {
-      margin-top: 30px;
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: none;
-      background: #00e5ff;
-      color: #000;
-      font-size: 16px;
-      cursor: pointer;
-    }
+        .unit {
+            font-size: 1rem;
+            color: #8f92a9;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: -5px;
+        }
 
-    .status {
-      margin-top: 12px;
-      font-size: 14px;
-      color: #aaa;
-    }
-  </style></head>
-<body>  <div class="container">
-    <h1>Teste de Velocidade da Internet</h1><div class="circle" id="circle">
-  <div>
-    <div class="speed" id="mainSpeed">0</div>
-    <div class="unit" id="mainLabel">Mbps</div>
-  </div>
-</div>
+        /* Marcadores de velocidade (0, 10, 50...) */
+        .ticks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .tick {
+            position: absolute;
+            color: #555770;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        /* Posicionamento manual aproximado dos ticks visualizados */
+        .t-0 { bottom: 40px; left: 60px; }
+        .t-10 { top: 120px; left: 20px; }
+        .t-50 { top: 30px; left: 60px; }
+        .t-100 { top: 10px; left: 50%; transform: translateX(-50%); }
+        .t-250 { top: 30px; right: 60px; }
+        .t-500 { top: 120px; right: 20px; }
 
-<div class="info">
-  <div class="box">
-    <span>Ping</span>
-    <strong id="ping">-- ms</strong>
-  </div>
-  <div class="box">
-    <span>Download</span>
-    <strong id="download">-- Mbps</strong>
-  </div>
-  <div class="box">
-    <span>Upload</span>
-    <strong id="upload">-- Mbps</strong>
-  </div>
-</div>
+        /* --- BOTÃO INICIAR --- */
+        .start-button-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+        }
 
-<button onclick="startTest()">INICIAR</button>
-<div class="status" id="status">Aguardando teste</div>
+        .btn-start {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            cursor: pointer;
+            text-transform: uppercase;
+            position: relative;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 0 0 rgba(0, 191, 165, 0.7);
+            animation: pulse-white 2s infinite;
+        }
 
-  </div>  <script>
-    async function measureDownload() {
-      const url = "https://speed.cloudflare.com/__down?bytes=5000000";
-      const start = performance.now();
-      const response = await fetch(url, { cache: 'no-store' });
-      const data = await response.arrayBuffer();
-      const end = performance.now();
-      const bits = data.byteLength * 8;
-      const seconds = (end - start) / 1000;
-      return (bits / seconds / 1024 / 1024).toFixed(1);
-    }
+        .btn-start:hover {
+            border-color: #00bfa5;
+            color: #00bfa5;
+        }
 
-    async function measureUpload() {
-      const data = new Uint8Array(3 * 1024 * 1024);
-      const start = performance.now();
-      await fetch("https://speed.cloudflare.com/__up", {
-        method: "POST",
-        body: data
-      });
-      const end = performance.now();
-      const bits = data.length * 8;
-      const seconds = (end - start) / 1000;
-      return (bits / seconds / 1024 / 1024).toFixed(1);
-    }
+        /* Animação de pulso do botão */
+        @keyframes pulse-white {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.1); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
 
-    async function measurePing() {
-      const start = performance.now();
-      await fetch("https://www.cloudflare.com/cdn-cgi/trace", { cache: 'no-store' });
-      const end = performance.now();
-      return Math.round(end - start);
-    }
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
 
-    async function startTest() {
-      document.getElementById("status").innerText = "Testando...";
-      document.getElementById("mainSpeed").innerText = "...";
+        /* --- RODAPÉ E INFORMAÇÕES DO PROVEDOR --- */
+        .footer-info {
+            width: 100%;
+            background-color: #0b0c15;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            border-top: 1px solid #1c1e33;
+        }
 
-      try {
-        const ping = await measurePing();
-        document.getElementById("ping").innerText = ping + " ms";
+        .info-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
 
-        document.getElementById("mainLabel").innerText = "Download";
-        const download = await measureDownload();
-        document.getElementById("download").innerText = download + " Mbps";
-        document.getElementById("mainSpeed").innerText = download;
+        .provider-details {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
-        document.getElementById("mainLabel").innerText = "Upload";
-        const upload = await measureUpload();
-        document.getElementById("upload").innerText = upload + " Mbps";
-        document.getElementById("mainSpeed").innerText = upload;
+        .icon-user, .icon-server {
+            font-size: 1.5rem;
+            color: #5b5e75;
+        }
 
-        document.getElementById("status").innerText = "Teste concluído";
-      } catch (e) {
-        document.getElementById("status").innerText = "Erro ao testar conexão";
-      }
-    }
-  </script></body>
+        .text-group h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #d1d1d1;
+        }
+
+        .text-group p {
+            font-size: 0.8rem;
+            color: #6a6d85;
+        }
+
+        .highlight-text {
+            color: #00bfa5; /* Ciano */
+        }
+
+        /* Pequenas métricas finais (Ping/Jitter) */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            opacity: 0; /* Invisível até começar */
+            transition: opacity 0.5s;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+        .stat-label { font-size: 0.8rem; color: #8f92a9; }
+        .stat-val { font-size: 1.2rem; font-weight: bold; color: white; }
+
+        /* Efeito de status */
+        .status-text {
+            position: absolute;
+            bottom: -40px;
+            color: #00bfa5;
+            font-size: 1rem;
+            font-weight: 600;
+            opacity: 0;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">SPEEDTEST</div>
+    </header>
+
+    <main class="main-stage">
+        
+        <div class="gauge-container">
+            <div class="ticks">
+                <span class="tick t-0">0</span>
+                <span class="tick t-10">10</span>
+                <span class="tick t-50">50</span>
+                <span class="tick t-100">100</span>
+                <span class="tick t-250">250</span>
+                <span class="tick t-500">500+</span>
+            </div>
+
+            <svg class="gauge" viewBox="0 0 220 220">
+                <defs>
+                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#007cf0;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#00bfa5;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <circle class="circle-bg" cx="110" cy="110" r="100" />
+                <circle id="progress-circle" class="circle-progress" cx="110" cy="110" r="100" />
+            </svg>
+
+            <div class="gauge-center">
+                <div id="speed-display" class="speed-value">0.00</div>
+                <div class="unit">Mbps</div>
+                <div class="unit" style="font-size: 0.7rem; margin-top:5px; color:#00bfa5;">Download</div>
+            </div>
+            
+            <div id="status-text" class="status-text">Conectando...</div>
+        </div>
+
+        <div class="start-button-container" id="start-screen">
+            <button class="btn-start" onclick="startTest()">INICIAR</button>
+        </div>
+
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-item">
+                <div class="stat-label">Ping</div>
+                <div class="stat-val" id="ping-val">-- ms</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">Jitter</div>
+                <div class="stat-val" id="jitter-val">-- ms</div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="footer-info">
+        <div class="info-row">
+            <div class="provider-details">
+                <span class="icon-server">🌐</span> <div class="text-group">
+                    <h4>VaidFibra</h4>
+                    <p>Recife</p>
+                </div>
+            </div>
+        </div>
+        <div class="info-row">
+            <div class="provider-details">
+                <span class="icon-user">👤</span> <div class="text-group">
+                    <h4 class="highlight-text">Lmgb Servicos De Telecomunicacoes</h4>
+                    <p>E Internet Ltda</p>
+                    <p style="font-size: 0.7rem; margin-top: 2px;">200.215.224.56</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- LÓGICA DE SIMULAÇÃO ---
+
+        function startTest() {
+            // 1. Esconder botão Iniciar
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.add('hidden');
+            
+            // 2. Mostrar barra de stats e status
+            const statsBar = document.getElementById('stats-bar');
+            statsBar.style.opacity = '1';
+            
+            const statusText = document.getElementById('status-text');
+            statusText.style.opacity = '1';
+
+            // 3. Simular Ping e Jitter primeiro (Rápido)
+            setTimeout(() => {
+                document.getElementById('ping-val').innerText = Math.floor(Math.random() * (20 - 10) + 10) + " ms";
+                document.getElementById('jitter-val').innerText = Math.floor(Math.random() * (5 - 1) + 1) + " ms";
+            }, 1000);
+
+            // 4. Iniciar Animação de Download
+            setTimeout(() => {
+                simulateDownloadCurve();
+            }, 1500);
+        }
+
+        function simulateDownloadCurve() {
+            const speedDisplay = document.getElementById('speed-display');
+            const circle = document.getElementById('progress-circle');
+            
+            // Configurações da simulação (baseadas no vídeo: chega a ~70Mbps)
+            let currentSpeed = 0.00;
+            const targetSpeed = 68.37; // Velocidade final do vídeo
+            const circumference = 628; // 2 * PI * 100
+            
+            let phase = 0; // 0: Aceleração, 1: Flutuação no topo, 2: Finalização
+            let startTime = null;
+
+            function animate(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const progress = timestamp - startTime;
+
+                if (phase === 0) {
+                    // Fase de aceleração (0 a 3 segundos)
+                    // Aumenta rápido
+                    currentSpeed += (Math.random() * 1.5) + 0.5;
+                    if (currentSpeed >= targetSpeed + 5) {
+                        phase = 1; // Começa a flutuar
+                    }
+                } else if (phase === 1) {
+                    // Fase de flutuação (simula estabilização da rede)
+                    const fluctuation = (Math.random() * 4) - 2; // Sobe e desce um pouco
+                    currentSpeed = targetSpeed + fluctuation;
+                    
+                    if (progress > 6000) { // Após 6 segundos no total
+                        phase = 2;
+                    }
+                } else if (phase === 2) {
+                    // Finaliza e trava no número exato
+                    currentSpeed = targetSpeed;
+                    updateUI(currentSpeed, circumference);
+                    
+                    // Finalizar teste
+                    document.getElementById('status-text').innerText = "Concluído";
+                    document.getElementById('status-text').style.color = "#fff";
+                    
+                    // Reaparecer botão de reiniciar (opcional, ou mudar texto para 'Testar Novamente')
+                    setTimeout(() => {
+                        const btn = document.querySelector('.btn-start');
+                        btn.innerText = "Testar Novamente";
+                        btn.style.fontSize = "1rem";
+                        document.getElementById('start-screen').classList.remove('hidden');
+                    }, 1000);
+                    return; // Para a animação
+                }
+
+                // Atualiza a interface a cada frame
+                updateUI(currentSpeed, circumference);
+                requestAnimationFrame(animate);
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function updateUI(speed, circumference) {
+            const speedDisplay = document.getElementById('speed-display');
+            const circle = document.getElementById('progress-circle');
+
+            // Atualiza Texto
+            speedDisplay.innerText = speed.toFixed(2);
+
+            // Atualiza Gráfico (Gauge)
+            // Lógica: 100Mbps enche cerca de 70% do gauge visualmente no vídeo
+            // Vamos mapear 0-100 Mbps para o offset do SVG
+            // O arco total visível é cerca de 75% do círculo (270 graus visualmente usados)
+            
+            // Max speed visual para o gráfico = 100 Mbps (para encher boa parte)
+            const maxVisualSpeed = 120; 
+            let percent = speed / maxVisualSpeed;
+            if (percent > 1) percent = 1;
+
+            // O SVG offset funciona ao contrário: Full offset = vazio. 0 offset = cheio.
+            // Queremos preencher apenas ~75% do circulo no máximo (devido ao gap embaixo)
+            const maxFill = circumference * 0.75; 
+            const offset = circumference - (percent * maxFill);
+
+            circle.style.strokeDashoffset = offset;
+            
+            // Muda cor do texto status
+            if (speed > 0) {
+                document.getElementById('status-text').innerText = "Baixando...";
+            }
+        }
+
+    </script>
+</body>
 </html>
